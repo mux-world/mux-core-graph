@@ -1,0 +1,197 @@
+type User @entity {
+  # user address
+  id: ID!
+  subAccount: [SubAccount!] @derivedFrom(field:"user")
+  liquidityOrder: [LiquidityOrder!] @derivedFrom(field:"user")
+  positionOrder: [PositionOrder!] @derivedFrom(field:"user")
+  withdrawalOrder: [WithdrawalOrder!] @derivedFrom(field:"user")
+  liquidityTrade: [LiquidityTrade!] @derivedFrom(field:"user")
+  positionTrade: [PositionTrade!] @derivedFrom(field:"user")
+}
+
+type PositionOrder @entity {
+  # id = orderId
+  id: ID!
+  user: User!
+  subAccountId: String!
+  collateralId: Int!
+  assetId: Int!
+  collateral: BigDecimal!
+  size: BigDecimal!
+  price: BigDecimal!
+  profitTokenId: Int!
+  flags: BigInt!
+  isLong: Boolean!
+  isOpen: Boolean!
+  isMarket: Boolean!
+  isFinish: Boolean!
+  isFilled: Boolean!
+  isTrigger: Boolean!
+  createdAt: Int!
+  finishedAt: Int!
+  txHash: String!
+  deadline: Int!
+}
+
+type WithdrawalOrder @entity {
+  # id = orderId
+  id: ID!
+  user: User!
+  subAccountId: String!
+  amount: BigDecimal!
+  collateralId: Int!
+  assetId: Int!
+  profitTokenId: Int!
+  isLong: Boolean!
+  isProfit: Boolean!
+  isFinish: Boolean!
+  isFilled: Boolean!
+  createdAt: Int!
+  finishedAt: Int!
+  txHash: String!
+}
+
+type LiquidityOrder @entity {
+  # id = orderId
+  id: ID!
+  user: User!
+  assetId: Int!
+  amount: BigDecimal!
+  isAdding: Boolean!
+  isFinish: Boolean!
+  isFilled: Boolean!
+  createdAt: Int!
+  finishedAt: Int!
+  txHash: String!
+}
+
+type RebalanceOrder @entity {
+  # id = orderId
+  id: ID!
+  rebalancer: String!
+  tokenId0: Int!
+  tokenId1: Int!
+  rawAmount0: BigDecimal!
+  maxRawAmount1: BigDecimal!
+  userData: String!
+  isFilled: Boolean!
+  isFinish: Boolean!
+  createAt: Int!
+  finishedAt: Int!
+  txHash: String!
+}
+
+type Asset @entity {
+  # id
+  id: ID!
+  symbol: String!
+  decimal: BigInt!
+  isStable: Boolean!
+  tokenAddress: String!
+  muxTokenAddress: String!
+  timestamp: Int!
+}
+
+type Funding @entity {
+  # 'symbol' + '-' + timestamp
+  id: ID!
+  timestamp: Int!
+  symbol: String!
+  longFundingRate: BigDecimal!
+  longCumulativeFundingRate: BigDecimal!
+  shortFundingRate: BigDecimal!
+  shortCumulativeFunding: BigDecimal!
+  createdAt: Int!
+}
+
+type PositionTrade @entity {
+  # blockHash + '-' + logIndex + '-' + user
+  id: ID!
+  user: User!
+  subAccountId: String!
+  collateralId: Int!
+  profitAssetId: Int!
+  assetId: Int!
+  amount: BigDecimal!
+  isLong: Boolean!
+  hasProfit: Boolean!
+  assetPrice: BigDecimal!
+  collateralPrice: BigDecimal!
+  profitAssetPrice: BigDecimal!
+  feeUsd: BigDecimal!
+  pnlUsd: BigDecimal!
+  remainPosition: BigDecimal!
+  remainCollateral: BigDecimal!
+  isOpen: Boolean!
+  flashTakeSequence: BigInt!
+  isLiquidated: Boolean!
+  logIndex: BigInt!
+  blockNumber: BigInt!
+  createdAt: Int!
+  txHash: String!
+}
+
+type LiquidityTrade @entity {
+  # blockHash + '-' + logIndex + '-' + user
+  id: ID!
+  user: User!
+  tokenId: Int!
+  tokenPrice: BigDecimal!
+  mlpPrice: BigDecimal!
+  mlpAmount: BigDecimal!
+  fee: BigDecimal!
+  isAdd: Boolean!
+  logIndex: BigInt!
+  blockNumber: BigInt!
+  createdAt: Int!
+  txHash: String!
+}
+
+type SubAccount @entity {
+  id: ID!
+  user: User!
+  collateralId: Int!
+  assetId: Int!
+  size: BigDecimal!
+  isLong: Boolean!
+  marginUsed: BigDecimal!
+  createdAt: Int!
+}
+
+type Price @entity {
+  id: ID!
+  assetId: Int!
+  price: BigDecimal!
+  referencePrice: BigDecimal!
+  deviation: BigInt!
+  createdAt: Int!
+}
+
+type FlashTakeSequence @entity {
+  # tx_hash
+  id: ID!
+  sequence: BigInt!
+  positionTradeId: String
+}
+
+type FlashTake @entity {
+  # flashTakeSequence
+  id: ID!
+  user: User
+  positionTrade: PositionTrade
+  subAccountId: String!
+  collateralId: Int!
+  profitAssetId: Int!
+  assetId: Int!
+  size: BigDecimal!
+  collateral: BigDecimal!
+  gasFee: BigDecimal!
+  isLong: Boolean!
+  isOpen: Boolean!
+  errorMessage: String
+  logIndex: BigInt!
+  blockNumber: BigInt!
+  createdAt: Int!
+  txHash: String!
+  blockHash: String!
+}

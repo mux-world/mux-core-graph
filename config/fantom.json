@@ -1,0 +1,6 @@
+{
+  "network": "fantom",
+  "start": 37650215,
+  "book_contract": "0x0c30b10462CdED51C3CA31e7C51019b7d25a965B",
+  "pool_contract": "0x2e81F443A11a943196c88afcB5A0D807721A88E6"
+}

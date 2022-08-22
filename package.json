@@ -1,0 +1,24 @@
+{
+  "name": "mux-graph",
+  "version": "1.0.0",
+  "dependencies": {
+    "source-map-support": "^0.5.21"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.33.0",
+    "@graphprotocol/graph-ts": "^0.27.0",
+    "mustache": "^4.2.0"
+  },
+  "scripts": {
+    "prepare:arbitrum": "mustache config/arb1.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:bsc": "mustache config/bsc.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:ftm": "mustache config/fantom.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:ava": "mustache config/ava.json subgraph.template.yaml > subgraph.yaml",
+    "codegen": "./node_modules/.bin/graph codegen",
+    "build": "./node_modules/.bin/graph build",
+    "deploy:arbitrum": "./node_modules/.bin/graph deploy --debug --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ mux-world/mux-arb",
+    "deploy:bsc": "./node_modules/.bin/graph deploy --debug --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ mux-world/mux-bsc",
+    "deploy:ftm": "./node_modules/.bin/graph deploy --debug --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ mux-world/mux-ftm",
+    "deploy:ava": "./node_modules/.bin/graph deploy --debug --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ mux-world/mux-ava"
+  }
+}

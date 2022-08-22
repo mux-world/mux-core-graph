@@ -1,0 +1,6 @@
+{
+  "network": "avalanche",
+  "start": 14304145,
+  "book_contract": "0x5898c3E218a8501533d771C86e2fA37743ea2aDd",
+  "pool_contract": "0x0bA2e492e8427fAd51692EE8958eBf936bEE1d84"
+}

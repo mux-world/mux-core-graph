@@ -1,0 +1,33 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "assetId",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint96",
+        "name": "price",
+        "type": "uint96"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint96",
+        "name": "referencePrice",
+        "type": "uint96"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "deviation",
+        "type": "uint32"
+      }
+    ],
+    "name": "AssetPriceOutOfRange",
+    "type": "event"
+  }
+]

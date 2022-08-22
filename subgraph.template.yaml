@@ -1,0 +1,110 @@
+specVersion: 0.0.1
+description: mux-graph
+repository: https://github.com/mux-world/mux-core-graph
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: OrderBook
+    network: {{network}}
+    source:
+      address: '{{book_contract}}'
+      abi: OrderBook
+      startBlock: {{start}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - OrderUser
+        - PositionOrder
+        - WithdrawalOrder
+        - LiquidityOrder
+        - Asset
+      abis:
+        - name: OrderBook
+          file: ./abis/OrderBook.json
+      eventHandlers:
+        - event: NewPositionOrder(indexed bytes32,indexed uint64,uint96,uint96,uint96,uint8,uint8)
+          handler: handlePositionOrderOld
+        - event: NewPositionOrder(indexed bytes32,indexed uint64,uint96,uint96,uint96,uint8,uint8,uint32)
+          handler: handlePositionOrder
+        - event: NewLiquidityOrder(indexed address,indexed uint64,uint8,uint96,bool)
+          handler: handleLiquidityOrder
+        - event: NewWithdrawalOrder(indexed bytes32,indexed uint64,uint96,uint8,bool)
+          handler: handleWithdrawOrder
+        - event: NewRebalanceOrder(indexed address,indexed uint64,uint8,uint8,uint96,uint96,bytes32)
+          handler: handleRebalanceOrder
+        - event: FillOrder(uint64,uint8,bytes32[3])
+          handler: handleFillOrder
+        - event: CancelOrder(uint64,uint8,bytes32[3])
+          handler: handleCancelOrder
+        - event: FillingFlashTake(indexed uint64)
+          handler: handleFillingFlashTake
+        - event: FillFlashTake(indexed bytes32,indexed uint64,uint96,uint96,uint96,uint8,uint8,string)
+          handler: handleFillFlashTake
+      file: ./src/core.ts
+  - kind: ethereum/contract
+    name: LiquidityPool
+    network: {{network}}
+    source:
+      address: '{{pool_contract}}'
+      abi: LiquidityPool
+      startBlock: {{start}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Funding
+        - Asset
+        - PositionTrade
+        - LiquidityTrade
+      abis:
+        - name: LiquidityPool
+          file: ./abis/LiquidityPool.json
+      eventHandlers:
+        - event: SetAssetSymbol(indexed uint8,bytes32)
+          handler: handleSetAssetSymbol
+        - event: AddAsset(indexed uint8,bytes32,uint8,bool,address,address)
+          handler: handleAddAsset
+        - event: UpdateFundingRate(indexed uint8,uint32,uint128,uint32,uint128)
+          handler: handleUpdateFundingRate
+        - event: ClosePosition(indexed address,indexed uint8,(bytes32,uint8,uint8,bool,uint96,uint96,uint96,uint96,uint96,uint96,bool,uint96))
+          handler: handleClosePositionTradeOld
+        - event: ClosePosition(indexed address,indexed uint8,(bytes32,uint8,uint8,bool,uint96,uint96,uint96,uint96,uint96,bool,uint96,uint96,uint96))
+          handler: handleClosePositionTrade
+        - event: OpenPosition(indexed address,indexed uint8,(bytes32,uint8,bool,uint96,uint96,uint96,uint96,uint96))
+          handler: handleOpenPositionTradeOld
+        - event: OpenPosition(indexed address,indexed uint8,(bytes32,uint8,bool,uint96,uint96,uint96,uint96,uint96,uint96,uint96))
+          handler: handleOpenPositionTrade
+        - event: Liquidate(indexed address,indexed uint8,(bytes32,uint8,uint8,bool,uint96,uint96,uint96,uint96,uint96,uint96,bool,uint96))
+          handler: handleLiquidateOld
+        - event: Liquidate(indexed address,indexed uint8,(bytes32,uint8,uint8,bool,uint96,uint96,uint96,uint96,uint96,bool,uint96,uint96))
+          handler: handleLiquidate
+        - event: RemoveLiquidity(indexed address,indexed uint8,uint96,uint96,uint96,uint96)
+          handler: handleRemoveLiquidityTrade
+        - event: AddLiquidity(indexed address,indexed uint8,uint96,uint96,uint96,uint96)
+          handler: handleAddLiquidityTrade
+      file: ./src/core.ts
+  - kind: ethereum/contract
+    name: LibReferenceOracle
+    network: {{network}}
+    source:
+      address: '{{pool_contract}}'
+      abi: LibReferenceOracle
+      startBlock: {{start}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Price
+      abis:
+        - name: LibReferenceOracle
+          file: ./abis/LibReferenceOracle.json
+      eventHandlers:
+        - event: AssetPriceOutOfRange(uint8,uint96,uint96,uint32)
+          handler: handlePrice
+      file: ./src/core.ts
