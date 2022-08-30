@@ -1,6 +1,6 @@
 specVersion: 0.0.1
 description: mux-graph
-repository: https://github.com/mux-world/mux-core-graph
+repository: https://github.com/mcdexio/mux-graph
 schema:
   file: ./schema.graphql
 dataSources:
@@ -87,6 +87,10 @@ dataSources:
           handler: handleRemoveLiquidityTrade
         - event: AddLiquidity(indexed address,indexed uint8,uint96,uint96,uint96,uint96)
           handler: handleAddLiquidityTrade
+        - event: WithdrawCollateral(indexed bytes32,indexed address,uint8,uint256,uint96)
+          handler: handleWithdrawCollateral
+        - event: DepositCollateral(indexed bytes32,indexed address,uint8,uint256,uint96)
+          handler: handleDepositCollateral
       file: ./src/core.ts
   - kind: ethereum/contract
     name: LibReferenceOracle

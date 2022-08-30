@@ -22,13 +22,15 @@ import {
   Liquidate as LiquidateEvent,
   Liquidate1 as LiquidateEventOld,
   SetAssetSymbol as SetAssetSymbolEvent,
+  WithdrawCollateral as WithdrawCollateralEvent,
+  DepositCollateral as DepositCollateralEvent,
 } from "../generated/LiquidityPool/LiquidityPool";
 
 import {
   AssetPriceOutOfRange as AssetPriceOutOfRangeEvent,
 } from "../generated/LibReferenceOracle/LibReferenceOracle"
 
-import {log, Address, BigInt, Bytes, store} from '@graphprotocol/graph-ts'
+import {log, Address, BigInt, Bytes, store, BigDecimal} from '@graphprotocol/graph-ts'
 
 import {
   convertToDecimal,
@@ -94,6 +96,22 @@ function handlePositionOrderEvent(
   positionOrder.txHash = txHash
   positionOrder.deadline = deadline.toI32()
   positionOrder.save()
+}
+
+export function handleDepositCollateral(event: DepositCollateralEvent): void {
+  let user = fetchUser(event.params.trader)
+  let subAccountId = event.params.subAccountId
+  let subAccount = fetchSubAccount(user, subAccountId.toHexString(), event.block.timestamp)
+  let wadAmount = convertToDecimal(event.params.wadAmount, BI_18)
+  subAccount.collateral = subAccount.collateral.plus(wadAmount)
+}
+
+export function handleWithdrawCollateral(event: WithdrawCollateralEvent): void {
+  let user = fetchUser(event.params.trader)
+  let subAccountId = event.params.subAccountId
+  let subAccount = fetchSubAccount(user, subAccountId.toHexString(), event.block.timestamp)
+  let wadAmount = convertToDecimal(event.params.wadAmount, BI_18)
+  subAccount.collateral = subAccount.collateral.plus(wadAmount)
 }
 
 export function handlePositionOrderOld(event: NewPositionOrderEventOld): void {
@@ -336,6 +354,7 @@ export function handleOpenPositionTradeOld(event: OpenPositionEventOld): void {
   positionTrade.collateralPrice = convertToDecimal(event.params.args.collateralPrice, BI_18)
   positionTrade.isOpen = true
   positionTrade.blockNumber = event.block.number
+  positionTrade.entryPrice = convertToDecimal(event.params.args.entryPrice, BI_18)
   positionTrade.save()
 
   let subAccount = fetchSubAccount(user, subAccountId.toHexString(), event.block.timestamp)
@@ -376,6 +395,7 @@ export function handleOpenPositionTrade(event: OpenPositionEvent): void {
     flashTakeSequence.positionTradeId = positionTrade.id
     flashTakeSequence.save()
   }
+  positionTrade.entryPrice = convertToDecimal(event.params.args.newEntryPrice, BI_18)
   positionTrade.save()
 
   let subAccount = fetchSubAccount(user, subAccountId.toHexString(), event.block.timestamp)
@@ -383,7 +403,7 @@ export function handleOpenPositionTrade(event: OpenPositionEvent): void {
   subAccount.collateralId = event.params.args.collateralId
   subAccount.assetId = event.params.assetId
   subAccount.isLong = event.params.args.isLong
-  subAccount.marginUsed = convertToDecimal(event.params.args.remainCollateral, BI_18)
+  subAccount.collateral = convertToDecimal(event.params.args.remainCollateral, BI_18)
   subAccount.save()
 }
 
@@ -399,16 +419,19 @@ export function handleClosePositionTrade(event: ClosePositionEvent): void {
   positionTrade.collateralId = event.params.args.collateralId
   positionTrade.assetId = event.params.assetId
   positionTrade.profitAssetId = event.params.args.profitAssetId
-  positionTrade.amount = convertToDecimal(event.params.args.amount, BI_18)
+  let amount = convertToDecimal(event.params.args.amount, BI_18)
+  positionTrade.amount = amount
   positionTrade.isLong = event.params.args.isLong
   positionTrade.feeUsd = convertToDecimal(event.params.args.feeUsd, BI_18)
-  positionTrade.assetPrice = convertToDecimal(event.params.args.assetPrice, BI_18)
+  let assetPrice = convertToDecimal(event.params.args.assetPrice, BI_18)
+  positionTrade.assetPrice = assetPrice
   positionTrade.collateralPrice = convertToDecimal(event.params.args.collateralPrice, BI_18)
   positionTrade.profitAssetPrice = convertToDecimal(event.params.args.profitAssetPrice, BI_18)
   positionTrade.remainCollateral = convertToDecimal(event.params.args.remainCollateral, BI_18)
   positionTrade.remainPosition = convertToDecimal(event.params.args.remainPosition, BI_18)
   positionTrade.isOpen = false
-  positionTrade.pnlUsd = convertToDecimal(event.params.args.pnlUsd, BI_18)
+  let pnlUsd = convertToDecimal(event.params.args.pnlUsd, BI_18)
+  positionTrade.pnlUsd = pnlUsd
   positionTrade.hasProfit = event.params.args.hasProfit
   positionTrade.blockNumber = event.block.number
   //relate with flash take sequence
@@ -418,13 +441,21 @@ export function handleClosePositionTrade(event: ClosePositionEvent): void {
     flashTakeSequence.positionTradeId = positionTrade.id
     flashTakeSequence.save()
   }
+  let diff = pnlUsd.div(amount)
+  if (!positionTrade.hasProfit) {
+    diff = diff.neg()
+  }
+  if (!positionTrade.isLong) {
+    diff = diff.neg()
+  }
+  positionTrade.entryPrice = assetPrice.minus(diff)
   positionTrade.save()
 
   let subAccount = fetchSubAccount(user, subAccountId.toHexString(), event.block.timestamp)
   subAccount.size = subAccount.size.minus(positionTrade.amount)
   subAccount.collateralId = event.params.args.collateralId
   subAccount.assetId = event.params.assetId
-  subAccount.marginUsed = convertToDecimal(event.params.args.remainCollateral, BI_18)
+  subAccount.collateral = convertToDecimal(event.params.args.remainCollateral, BI_18)
   subAccount.isLong = event.params.args.isLong
   subAccount.save()
 }
@@ -451,6 +482,7 @@ export function handleClosePositionTradeOld(event: ClosePositionEventOld): void 
   positionTrade.pnlUsd = convertToDecimal(event.params.args.pnlUsd, BI_18)
   positionTrade.hasProfit = event.params.args.hasProfit
   positionTrade.blockNumber = event.block.number
+  positionTrade.entryPrice = convertToDecimal(event.params.args.entryPrice, BI_18)
   positionTrade.save()
 
   let subAccount = fetchSubAccount(user, subAccountId.toHexString(), event.block.timestamp)
@@ -478,22 +510,42 @@ export function handleLiquidate(event: LiquidateEvent): void {
   positionTrade.amount = amount
   positionTrade.isLong = event.params.args.isLong
   positionTrade.feeUsd = convertToDecimal(event.params.args.feeUsd, BI_18)
-  positionTrade.assetPrice = convertToDecimal(event.params.args.assetPrice, BI_18)
-  positionTrade.collateralPrice = convertToDecimal(event.params.args.collateralPrice, BI_18)
+  let assetPrice = convertToDecimal(event.params.args.assetPrice, BI_18)
+  positionTrade.assetPrice = assetPrice
+  let collateralPrice = convertToDecimal(event.params.args.collateralPrice, BI_18)
+  positionTrade.collateralPrice = collateralPrice
   positionTrade.profitAssetPrice = convertToDecimal(event.params.args.profitAssetPrice, BI_18)
   positionTrade.isOpen = false
-  positionTrade.pnlUsd = convertToDecimal(event.params.args.pnlUsd, BI_18)
   positionTrade.hasProfit = event.params.args.hasProfit
+  let pnlUsd = convertToDecimal(event.params.args.pnlUsd, BI_18)
+  let subAccount = fetchSubAccount(user, subAccountId.toHexString(), event.block.timestamp)
+  let collateral = subAccount.collateral
+  if (!positionTrade.hasProfit) {
+    if (pnlUsd < collateral.times(collateralPrice)) {
+      positionTrade.pnlUsd = pnlUsd
+    } else {
+      positionTrade.pnlUsd = collateral.times(collateralPrice)
+    }
+  } else {
+    positionTrade.pnlUsd = pnlUsd
+  }
   positionTrade.isLiquidated = true
   positionTrade.remainCollateral = convertToDecimal(event.params.args.remainCollateral, BI_18)
   positionTrade.blockNumber = event.block.number
+  let diff = pnlUsd.div(amount)
+  if (!positionTrade.hasProfit) {
+    diff = diff.neg()
+  }
+  if (!positionTrade.isLong) {
+    diff = diff.neg()
+  }
+  positionTrade.entryPrice = assetPrice.minus(diff)
   positionTrade.save()
 
-  let subAccount = fetchSubAccount(user, subAccountId.toHexString(), event.block.timestamp)
   subAccount.size = subAccount.size.minus(amount)
   subAccount.collateralId = event.params.args.collateralId
   subAccount.assetId = event.params.assetId
-  subAccount.marginUsed = convertToDecimal(event.params.args.remainCollateral, BI_18)
+  subAccount.collateral = positionTrade.remainCollateral
   subAccount.isLong = event.params.args.isLong
   subAccount.save()
 }
@@ -523,6 +575,7 @@ export function handleLiquidateOld(event: LiquidateEventOld): void {
   positionTrade.hasProfit = event.params.args.hasProfit
   positionTrade.isLiquidated = true
   positionTrade.blockNumber = event.block.number
+  positionTrade.entryPrice = convertToDecimal(event.params.args.entryPrice, BI_18)
   positionTrade.save()
 
   let subAccount = fetchSubAccount(user, subAccountId.toHexString(), event.block.timestamp)

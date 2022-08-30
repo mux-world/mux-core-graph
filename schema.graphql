@@ -122,6 +122,7 @@ type PositionTrade @entity {
   pnlUsd: BigDecimal!
   remainPosition: BigDecimal!
   remainCollateral: BigDecimal!
+  entryPrice: BigDecimal!
   isOpen: Boolean!
   flashTakeSequence: BigInt!
   isLiquidated: Boolean!
@@ -154,7 +155,7 @@ type SubAccount @entity {
   assetId: Int!
   size: BigDecimal!
   isLong: Boolean!
-  marginUsed: BigDecimal!
+  collateral: BigDecimal!
   createdAt: Int!
 }
 
